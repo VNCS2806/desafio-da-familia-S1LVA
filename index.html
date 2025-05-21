@@ -1,0 +1,248 @@
+# desafio-da-familia-S1LVA
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Missão da Semana - Game Familiar</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #f4f4f4; }
+    input, select, button { padding: 5px; margin: 5px 0; }
+    .controls { margin-bottom: 20px; }
+    #suggestionsTable { display: none; margin-top: 20px; }
+    #loginArea { text-align: center; margin-bottom: 30px; }
+    #mainContent { display: none; }
+    button.deleteBtn { background-color: #e74c3c; color: white; border: none; padding: 4px 8px; cursor: pointer; }
+    button.deleteBtn:hover { background-color: #c0392b; }
+    button#resetBtn { background-color: #3498db; color: white; border: none; padding: 8px 12px; cursor: pointer; }
+    button#resetBtn:hover { background-color: #2980b9; }
+    #userInfo { margin-bottom: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div id="loginArea">
+    <h2>Login com GitHub</h2>
+    <button id="githubLoginBtn">Entrar com GitHub</button>
+    <p id="loginStatus"></p>
+  </div>
+
+  <div id="mainContent">
+    <div id="userInfo"></div>
+    <h1>Missão da Semana - Game Familiar</h1>
+
+    <div class="controls">
+      <label>Jogador:
+        <select id="playerSelect">
+          <option value="Alan">Alan</option>
+          <option value="Daniela">Daniela</option>
+          <option value="Vinicius">Vinicius</option>
+          <option value="Alani">Alani</option>
+        </select>
+      </label>
+      <label>Pontos:
+        <select id="pointSelect"></select>
+      </label>
+      <button onclick="addEntry()">Adicionar Pontos</button>
+      <button onclick="showSuggestions()">Ver Tabela de Sugestões</button>
+      <button id="resetBtn" onclick="resetEntries()">Zerar Pontuação Geral</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Jogador</th>
+          <th>Pontos</th>
+          <th>Data/Hora</th>
+          <th>Adicionado por</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="entries"></tbody>
+    </table>
+
+    <div>
+      <button onclick="showSummary()">Resumo Semanal</button>
+      <div id="summary"></div>
+    </div>
+
+    <div id="suggestionsTable">
+      <h3>Sugestões de Atividades (1 a 50 pontos / -1 a -50)</h3>
+      <ul>
+        <li>1-5: Pequenas ajudas ou atitudes positivas</li>
+        <li>10: Arrumar a cama, tirar o lixo</li>
+        <li>15: Lavar louça, guardar compras</li>
+        <li>20: Organizar materiais, brincar com irmão(a)</li>
+        <li>25: Levar cachorro para passear, limpar banheiro</li>
+        <li>30: Estudar 1h, atividade física, ler livro</li>
+        <li>35: Preparar refeição, lavar roupas</li>
+        <li>40: Cuidar da casa, resolver problema difícil</li>
+        <li>45: Consertar algo, ajudar em algo complicado</li>
+        <li>50: Grande conquista, super tarefa da semana</li>
+        <li>-1 a -10: Atitude negativa, preguiça, desobediência</li>
+        <li>-20 a -50: Desrespeito, discussão, sobrecarregou os outros</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Variáveis globais
+    let entries = JSON.parse(localStorage.getItem('entries')) || [];
+    let idCounter = entries.length ? Math.max(...entries.map(e => e.id)) + 1 : 1;
+    let loggedUser = null;
+
+    // Preencher opções de pontos (-50 a 50, exceto 0)
+    const pointSelect = document.getElementById('pointSelect');
+    for (let i = -50; i <= 50; i++) {
+      if (i !== 0) {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = i;
+        pointSelect.appendChild(opt);
+      }
+    }
+
+    // Renderizar lista de entradas na tabela
+    function renderEntries() {
+      const tbody = document.getElementById('entries');
+      tbody.innerHTML = '';
+      entries.forEach(e => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${e.id}</td>
+          <td>${e.player}</td>
+          <td>${e.points}</td>
+          <td>${e.timestamp}</td>
+          <td>${e.addedBy}</td>
+          <td>${e.addedBy === loggedUser ? '<button class="deleteBtn" onclick="deleteEntry(' + e.id + ')">Excluir</button>' : ''}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Adicionar nova entrada
+    function addEntry() {
+      if (!loggedUser) {
+        alert('Você precisa estar logado para adicionar pontos.');
+        return;
+      }
+      const player = document.getElementById('playerSelect').value;
+      const points = parseInt(pointSelect.value);
+      const timestamp = new Date().toLocaleString();
+      const newEntry = {
+        id: idCounter++,
+        player,
+        points,
+        timestamp,
+        addedBy: loggedUser
+      };
+      entries.push(newEntry);
+      saveEntries();
+      renderEntries();
+    }
+
+    // Deletar entrada pelo id (só pode o dono da entrada)
+    function deleteEntry(id) {
+      const entry = entries.find(e => e.id === id);
+      if (!entry) return alert('Entrada não encontrada.');
+      if (entry.addedBy !== loggedUser) return alert('Você só pode excluir suas próprias entradas.');
+      if (!confirm('Tem certeza que quer excluir esta entrada?')) return;
+      entries = entries.filter(e => e.id !== id);
+      saveEntries();
+      renderEntries();
+    }
+
+    // Salvar entradas no localStorage
+    function saveEntries() {
+      localStorage.setItem('entries', JSON.stringify(entries));
+    }
+
+    // Mostrar resumo de pontos por jogador
+    function showSummary() {
+      const summaryDiv = document.getElementById('summary');
+      const totals = entries.reduce((acc, e) => {
+        acc[e.player] = (acc[e.player] || 0) + e.points;
+        return acc;
+      }, {});
+
+      const metas = {
+        'Alan': 300,
+        'Daniela': 300,
+        'Vinicius': 300,
+        'Alani': 200
+      };
+
+      summaryDiv.innerHTML = `
+        <p><b>Resumo Semanal</b></p>
+        <p>Alan: ${totals['Alan'] || 0} / ${metas['Alan']}</p>
+        <p>Daniela: ${totals['Daniela'] || 0} / ${metas['Daniela']}</p>
+        <p>Vinicius: ${totals['Vinicius'] || 0} / ${metas['Vinicius']}</p>
+        <p>Alani: ${totals['Alani'] || 0} / ${metas['Alani']}</p>
+      `;
+    }
+
+    // Mostrar/ocultar sugestões
+    function showSuggestions() {
+      const table = document.getElementById('suggestionsTable');
+      table.style.display = table.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Resetar todas as entradas (limpar pontos)
+    function resetEntries() {
+      if (!loggedUser) {
+        alert('Você precisa estar logado para resetar a pontuação.');
+        return;
+      }
+      if (!confirm('Tem certeza que quer zerar toda a pontuação? Essa ação não pode ser desfeita.')) return;
+      entries = [];
+      idCounter = 1;
+      saveEntries();
+      renderEntries();
+      document.getElementById('summary').innerHTML = '';
+    }
+
+    // --- Login GitHub simplificado (exemplo básico sem backend, só para demo) ---
+    // Nota: Para implementar login real via GitHub OAuth é necessário backend e redirecionamento.
+    // Aqui simulamos login para testes, mas pode trocar isso para integração real.
+
+    const loginArea = document.getElementById('loginArea');
+    const mainContent = document.getElementById('mainContent');
+    const userInfo = document.getElementById('userInfo');
+    const loginStatus = document.getElementById('loginStatus');
+    const githubLoginBtn = document.getElementById('githubLoginBtn');
+
+    githubLoginBtn.addEventListener('click', () => {
+      // Simulação simples: solicitar username GitHub via prompt (substitua por login real no futuro)
+      const username = prompt('Digite seu nome de usuário GitHub para login:');
+      if (!username) {
+        loginStatus.textContent = 'Login cancelado.';
+        return;
+      }
+      loggedUser = username.trim();
+      loginStatus.textContent = '';
+      loginArea.style.display = 'none';
+      mainContent.style.display = 'block';
+      userInfo.innerHTML = `<p>Logado como <b>${loggedUser}</b></p><button onclick="logout()">Sair</button>`;
+      renderEntries();
+    });
+
+    function logout() {
+      if (!confirm('Tem certeza que quer sair?')) return;
+      loggedUser = null;
+      loginArea.style.display = 'block';
+      mainContent.style.display = 'none';
+      userInfo.innerHTML = '';
+      document.getElementById('summary').innerHTML = '';
+    }
+
+    // Ao carregar a página, já carrega as entradas e tenta manter usuário logado se quiser:
+    // Aqui não há sessão real, então sempre precisa logar ao recarregar a página.
+    renderEntries();
+
+  </script>
+</body>
+</html>
