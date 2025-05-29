@@ -3,33 +3,35 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Missão da Semana - Game Familiar</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     h1 { text-align: center; }
-    table, input, button, select { font-size: 14px; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background-color: #f4f4f4; }
-    input, select, button { padding: 5px; margin: 5px 0; }
-    .controls, #searchInput { margin-bottom: 20px; }
+    input, select { padding: 5px; }
+    .controls { margin-bottom: 20px; }
+    button { padding: 8px 12px; margin: 5px; cursor: pointer; }
+    #suggestionsTable, #deviceTable { display: none; margin-top: 20px; }
+    #loginArea { text-align: center; margin-bottom: 30px; }
     #mainContent { display: none; }
-    .deleteBtn, #resetBtn { cursor: pointer; }
-    .deleteBtn { background-color: #e74c3c; color: #fff; border: none; padding: 4px 8px; }
-    .deleteBtn:hover { background-color: #c0392b; }
-    #resetBtn { background-color: #3498db; color: white; border: none; padding: 8px 12px; }
-    #resetBtn:hover { background-color: #2980b9; }
+    #logoutBtn { float: right; }
   </style>
 </head>
 <body>
   <div id="loginArea">
-    <h2>Login com GitHub</h2>
-    <button id="githubLoginBtn">Entrar com GitHub</button>
+    <h2>Login</h2>
+    <label for="loginUser">Usuário:</label>
+    <input type="text" id="loginUser">
+    <label for="loginPass">Senha:</label>
+    <input type="password" id="loginPass">
+    <button onclick="login()">Entrar</button>
   </div>
 
   <div id="mainContent">
-    <div id="userInfo"></div>
+    <button id="logoutBtn" onclick="logout()">Logout</button>
     <h1>Missão da Semana - Game Familiar</h1>
 
     <div class="controls">
@@ -45,13 +47,13 @@
         <select id="pointSelect"></select>
       </label>
       <button onclick="addEntry()">Adicionar Pontos</button>
+      <button onclick="showSuggestions()">Ver Tabela de Sugestões</button>
       <button onclick="showSummary()">Resumo Semanal</button>
-      <button id="resetBtn" onclick="resetEntries()">Zerar Pontuação Geral</button>
+      <button onclick="resetEntries()">Zerar Pontuação Geral</button>
+      <button id="showDeviceTableBtn" onclick="showDeviceTable()">Ver Detalhado (Mestre)</button>
     </div>
 
-    <input type="text" id="searchInput" placeholder="Pesquisar tarefa..." onkeyup="searchTasks()" />
-
-    <table id="entriesTable">
+    <table>
       <thead>
         <tr>
           <th>#</th>
@@ -59,7 +61,7 @@
           <th>Pontos</th>
           <th>Data/Hora</th>
           <th>Adicionado por</th>
-          <th>Ações</th>
+          <th>Ação</th>
         </tr>
       </thead>
       <tbody id="entries"></tbody>
@@ -67,23 +69,51 @@
 
     <div id="summary"></div>
 
-    <h3>Tarefas Sugeridas</h3>
-    <table>
-      <thead><tr><th>#</th><th>Descrição</th></tr></thead>
-      <tbody id="taskList"></tbody>
-    </table>
+    <div id="suggestionsTable">
+      <h3>Sugestões de Atividades (1 a 50 pontos / -1 a -50)</h3>
+      <ul>
+        ${Array.from({ length: 100 }, (_, i) => `<li>Tarefa número ${i + 1}</li>`).join('')}
+        ${Array.from({ length: 100 }, (_, i) => `<li>Tarefa número ${i + 101}</li>`).join('')}
+        ${Array.from({ length: 100 }, (_, i) => `<li>Tarefa número ${i + 201}</li>`).join('')}
+        ${Array.from({ length: 100 }, (_, i) => `<li>Tarefa número ${i + 301}</li>`).join('')}
+      </ul>
+      <input type="text" placeholder="Pesquisar tarefa..." oninput="filterTasks(this.value)">
+    </div>
+
+    <div id="deviceTable">
+      <h3>Visualização Detalhada (com nome do dispositivo)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Jogador</th>
+            <th>Pontos</th>
+            <th>Data/Hora</th>
+            <th>Adicionado por</th>
+            <th>Dispositivo</th>
+          </tr>
+        </thead>
+        <tbody id="deviceTableBody"></tbody>
+      </table>
+    </div>
   </div>
 
   <script>
+    const users = {
+      "Daniela": "200786",
+      "Alan": "170482",
+      "Vinicius": "28062012",
+      "VNCS2806": "master"
+    };
+
     let entries = JSON.parse(localStorage.getItem('entries')) || [];
-    let idCounter = entries.length ? Math.max(...entries.map(e => e.id)) + 1 : 1;
+    let idCounter = parseInt(localStorage.getItem('idCounter')) || 1;
     let loggedUser = localStorage.getItem('loggedUser');
 
-    const loginArea = document.getElementById('loginArea');
-    const mainContent = document.getElementById('mainContent');
-    const userInfo = document.getElementById('userInfo');
-    const pointSelect = document.getElementById('pointSelect');
+    // Dispositivo
+    const deviceName = navigator.userAgent;
 
+    const pointSelect = document.getElementById('pointSelect');
     for (let i = -50; i <= 50; i++) {
       if (i !== 0) {
         const opt = document.createElement('option');
@@ -93,106 +123,135 @@
       }
     }
 
+    function saveData() {
+      localStorage.setItem('entries', JSON.stringify(entries));
+      localStorage.setItem('idCounter', idCounter);
+    }
+
+    function login() {
+      const user = document.getElementById('loginUser').value.trim();
+      const pass = document.getElementById('loginPass').value.trim();
+      if (users[user] && users[user] === pass) {
+        loggedUser = user;
+        localStorage.setItem('loggedUser', loggedUser);
+        document.getElementById('loginArea').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+        document.getElementById('showDeviceTableBtn').style.display = loggedUser === 'VNCS2806' ? 'inline' : 'none';
+        renderEntries();
+      } else {
+        alert("Usuário ou senha inválido.");
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('loggedUser');
+      location.reload();
+    }
+
+    function addEntry() {
+      const player = document.getElementById('playerSelect').value;
+      const points = parseInt(document.getElementById('pointSelect').value);
+      const timestamp = new Date().toLocaleString();
+      const entry = {
+        id: idCounter++,
+        player,
+        points,
+        timestamp,
+        addedBy: loggedUser,
+        device: deviceName
+      };
+      entries.push(entry);
+      saveData();
+      renderEntries();
+    }
+
+    function deleteEntry(id) {
+      entries = entries.filter(e => e.id !== id);
+      saveData();
+      renderEntries();
+    }
+
     function renderEntries() {
       const tbody = document.getElementById('entries');
       tbody.innerHTML = '';
       entries.forEach(e => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
+        const row = document.createElement('tr');
+        row.innerHTML = `
           <td>${e.id}</td>
           <td>${e.player}</td>
           <td>${e.points}</td>
           <td>${e.timestamp}</td>
           <td>${e.addedBy}</td>
-          <td>${e.addedBy === loggedUser ? '<button class="deleteBtn" onclick="deleteEntry(' + e.id + ')">Excluir</button>' : ''}</td>
+          <td>${e.addedBy === loggedUser ? `<button onclick="deleteEntry(${e.id})">Excluir</button>` : ''}</td>
         `;
-        tbody.appendChild(tr);
+        tbody.appendChild(row);
       });
     }
 
-    function addEntry() {
-      const player = document.getElementById('playerSelect').value;
-      const points = parseInt(pointSelect.value);
-      const timestamp = new Date().toLocaleString();
-      const newEntry = {
-        id: idCounter++, player, points, timestamp, addedBy: loggedUser
-      };
-      entries.push(newEntry);
-      saveEntries();
-    }
-
-    function deleteEntry(id) {
-      const entry = entries.find(e => e.id === id);
-      if (entry.addedBy !== loggedUser) return alert('Só pode excluir suas próprias entradas.');
-      entries = entries.filter(e => e.id !== id);
-      saveEntries();
-    }
-
-    function saveEntries() {
-      localStorage.setItem('entries', JSON.stringify(entries));
-      renderEntries();
+    function resetEntries() {
+      if (confirm("Tem certeza que deseja apagar todos os pontos?")) {
+        entries = [];
+        idCounter = 1;
+        saveData();
+        renderEntries();
+        document.getElementById('summary').innerHTML = '';
+        document.getElementById('deviceTableBody').innerHTML = '';
+      }
     }
 
     function showSummary() {
       const summaryDiv = document.getElementById('summary');
-      const total = entries.reduce((acc, e) => {
+      const totals = entries.reduce((acc, e) => {
         acc[e.player] = (acc[e.player] || 0) + e.points;
         return acc;
       }, {});
       const metas = { Alan: 300, Daniela: 300, Vinicius: 300, Alani: 200 };
-      summaryDiv.innerHTML = Object.keys(metas).map(p => `${p}: ${total[p] || 0} / ${metas[p]}`).join('<br>');
+      summaryDiv.innerHTML = `
+        <p>Pontuação Alan: ${totals['Alan'] || 0} / ${metas['Alan']}</p>
+        <p>Pontuação Daniela: ${totals['Daniela'] || 0} / ${metas['Daniela']}</p>
+        <p>Pontuação Vinicius: ${totals['Vinicius'] || 0} / ${metas['Vinicius']}</p>
+        <p>Pontuação Alani: ${totals['Alani'] || 0} / ${metas['Alani']}</p>
+      `;
     }
 
-    function resetEntries() {
-      if (confirm('Zerar todos os dados?')) {
-        entries = [];
-        idCounter = 1;
-        saveEntries();
-        document.getElementById('summary').innerHTML = '';
-      }
+    function showSuggestions() {
+      const table = document.getElementById('suggestionsTable');
+      table.style.display = table.style.display === 'none' ? 'block' : 'none';
     }
 
-    document.getElementById('githubLoginBtn').onclick = () => {
-      const username = prompt('Digite seu nome de usuário do GitHub:');
-      if (username) {
-        loggedUser = username.trim();
-        localStorage.setItem('loggedUser', loggedUser);
-        showMain();
-      }
-    };
-
-    function logout() {
-      localStorage.removeItem('loggedUser');
-      loggedUser = null;
-      location.reload();
-    }
-
-    function showMain() {
-      loginArea.style.display = 'none';
-      mainContent.style.display = 'block';
-      userInfo.innerHTML = `Logado como <b>${loggedUser}</b> <button onclick="logout()">Logout</button>`;
-      renderEntries();
-    }
-
-    // Carregar tarefas sugeridas
-    const taskList = document.getElementById('taskList');
-    for (let i = 1; i <= 400; i++) {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${i}</td><td>Tarefa número ${i}</td>`;
-      taskList.appendChild(tr);
-    }
-
-    function searchTasks() {
-      const filter = document.getElementById('searchInput').value.toLowerCase();
-      const rows = taskList.getElementsByTagName('tr');
-      Array.from(rows).forEach(row => {
-        const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(filter) ? '' : 'none';
+    function filterTasks(query) {
+      const items = document.querySelectorAll('#suggestionsTable ul li');
+      items.forEach(li => {
+        li.style.display = li.textContent.toLowerCase().includes(query.toLowerCase()) ? '' : 'none';
       });
     }
 
-    // Se já estiver logado
-    if (loggedUser) showMain();
+    function showDeviceTable() {
+      if (loggedUser !== 'VNCS2806') return;
+      const tbody = document.getElementById('deviceTableBody');
+      const table = document.getElementById('deviceTable');
+      tbody.innerHTML = '';
+      entries.forEach(e => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${e.id}</td>
+          <td>${e.player}</td>
+          <td>${e.points}</td>
+          <td>${e.timestamp}</td>
+          <td>${e.addedBy}</td>
+          <td>${e.device}</td>
+        `;
+        tbody.appendChild(row);
+      });
+      table.style.display = 'block';
+    }
+
+    if (loggedUser && users[loggedUser]) {
+      document.getElementById('loginArea').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'block';
+      document.getElementById('showDeviceTableBtn').style.display = loggedUser === 'VNCS2806' ? 'inline' : 'none';
+      renderEntries();
+    }
   </script>
 </body>
 </html>
