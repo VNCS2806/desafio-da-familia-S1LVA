@@ -118,11 +118,11 @@
 <div id="app"></div>
 
 <script>
-  // Usuários cadastrados - login com senha
+  // Usuários cadastrados com senha e meta
   const users = [
-    { username: "joao", password: "123", meta: 100 },
-    { username: "maria", password: "456", meta: 150 },
-    { username: "ana", password: "789", meta: 200 }
+    { username: "Vini", password: "280612", meta: 300 },
+    { username: "Dani", password: "170482", meta: 250 },
+    { username: "Alan", password: "200786", meta: 200 }
   ];
 
   // Carregar registros do localStorage
@@ -139,8 +139,8 @@
     document.getElementById("app").innerHTML = `
       <div class="container">
         <h2>Login</h2>
-        <input type="text" id="input-username" placeholder="Usuário" />
-        <input type="password" id="input-password" placeholder="Senha" />
+        <input type="text" id="input-username" placeholder="Usuário" autocomplete="username" />
+        <input type="password" id="input-password" placeholder="Senha" autocomplete="current-password" />
         <button onclick="handleLogin()">Entrar</button>
       </div>
     `;
@@ -151,7 +151,7 @@
     const username = document.getElementById("input-username").value.trim();
     const password = document.getElementById("input-password").value.trim();
 
-    const user = users.find(u => u.username === username && u.password === password);
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
     if (!user) {
       alert("Usuário ou senha inválidos.");
       return;
@@ -163,7 +163,7 @@
   // Calcula pontos totais recebidos por um usuário
   function calcularPontos(usuario) {
     return registros
-      .filter(r => r.destino === usuario)
+      .filter(r => r.destino.toLowerCase() === usuario.toLowerCase())
       .reduce((acc, cur) => acc + cur.valor, 0);
   }
 
@@ -220,7 +220,7 @@
 
   // Ver registros de um usuário específico
   function verRegistros(username) {
-    const userRegistros = registros.filter(r => r.destino === username);
+    const userRegistros = registros.filter(r => r.destino.toLowerCase() === username.toLowerCase());
 
     document.getElementById("app").innerHTML = `
       <div class="container">
@@ -230,7 +230,7 @@
             <p><b>De:</b> ${r.origem}</p>
             <p><b>Valor:</b> ${r.valor}</p>
             <p><b>Motivo:</b> ${r.motivo}</p>
-            ${r.origem === currentUser.username ? `<button class="btn-delete" onclick="excluirRegistro(${i}, '${username}')">Excluir</button>` : ''}
+            ${r.origem.toLowerCase() === currentUser.username.toLowerCase() ? `<button class="btn-delete" onclick="excluirRegistro(${i}, '${username}')">Excluir</button>` : ''}
           </div>
         `).join("")}
         <button onclick="renderRanking()">Voltar</button>
@@ -241,7 +241,7 @@
   // Excluir um registro (só quem criou pode excluir)
   function excluirRegistro(indice, username) {
     // Filtra só os registros do usuário para achar índice correto
-    const userRegistros = registros.filter(r => r.destino === username);
+    const userRegistros = registros.filter(r => r.destino.toLowerCase() === username.toLowerCase());
     const registroParaExcluir = userRegistros[indice];
 
     // Acha índice no array geral registros
@@ -255,7 +255,7 @@
 
   // Abre modal para novo registro
   function abrirModalNovoRegistro() {
-    const outrosUsuarios = users.filter(u => u.username !== currentUser.username);
+    const outrosUsuarios = users.filter(u => u.username.toLowerCase() !== currentUser.username.toLowerCase());
     const opcoes = outrosUsuarios.map(u => `<option value="${u.username}">${u.username}</option>`).join("");
 
     // Cria modal na página
@@ -277,26 +277,32 @@
     document.body.appendChild(modal);
   }
 
-  // Fecha modal
+  // Fecha o modal
   function fecharModal() {
     const modal = document.getElementById("modal-novo-registro");
     if (modal) modal.remove();
   }
 
-  // Salva novo registro após validações
+  // Salvar registro de ponto
   function salvarRegistro() {
     const destino = document.getElementById("destino").value;
     const valor = parseInt(document.getElementById("valor").value);
     const motivo = document.getElementById("motivo").value.trim();
 
-    if (!destino || isNaN(valor) || valor <= 0 || motivo.length === 0) {
-      alert("Preencha todos os campos corretamente.");
+    if (!destino) {
+      alert("Selecione para quem deseja atribuir o ponto.");
       return;
     }
-
-    // Não pode dar ponto para si mesmo (não vai estar na lista, mas só para garantir)
-    if (destino === currentUser.username) {
-      alert("Você não pode atribuir pontos para si mesmo.");
+    if (destino.toLowerCase() === currentUser.username.toLowerCase()) {
+      alert("Você não pode atribuir pontos para você mesmo.");
+      return;
+    }
+    if (!valor || valor <= 0) {
+      alert("Informe um valor válido para os pontos.");
+      return;
+    }
+    if (!motivo) {
+      alert("Informe o motivo.");
       return;
     }
 
@@ -311,9 +317,8 @@
     renderHome();
   }
 
-  // Inicializa o app
+  // Inicializa app
   renderLogin();
-
 </script>
 
 </body>
