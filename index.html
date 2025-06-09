@@ -1,15 +1,286 @@
-Desafio da Família body { font-family: Arial, sans-serif; margin: 20px; background-color: #fdfdfd; } h1, h2, h3 { text-align: center; } .login-box, .main, .user-panel, .user-records { max-width: 600px; margin: auto; } .hidden { display: none; } .progress-bar { background: #ddd; border-radius: 10px; overflow: hidden; height: 20px; margin-top: 4px; } .progress-fill { background: #4caf50; height: 100%; text-align: center; color: white; } .user-button { cursor: pointer; background: #eee; padding: 10px; margin: 5px 0; border-radius: 5px; text-align: center; } input, select, button { padding: 6px; margin: 5px 0; width: 100%; font-size: 14px; } .record { border-bottom: 1px solid #ccc; padding: 4px 0; } .record.negative { color: red; } .record.positive { color: green; } 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Game da Família - Pontuação</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    #loginArea, #mainArea {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 25px 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
+    }
+    h1, h2 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin: 12px 0 6px;
+      font-weight: 600;
+    }
+    input[type=text], input[type=password], select {
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
+      border: 1.5px solid #bbb;
+      border-radius: 6px;
+      box-sizing: border-box;
+      transition: border-color 0.3s;
+    }
+    input[type=text]:focus, input[type=password]:focus, select:focus {
+      border-color: #007bff;
+      outline: none;
+    }
+    button {
+      margin-top: 18px;
+      width: 100%;
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px;
+      font-size: 17px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .progress-bar {
+      background: #ddd;
+      border-radius: 12px;
+      overflow: hidden;
+      height: 22px;
+      margin: 6px 0 14px;
+    }
+    .progress-fill {
+      height: 100%;
+      text-align: center;
+      color: white;
+      font-weight: 700;
+      line-height: 22px;
+      border-radius: 12px;
+      background: #28a745;
+      width: 0%;
+      transition: width 0.5s ease-in-out;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #bbb;
+      padding: 8px;
+      text-align: center;
+      font-size: 15px;
+    }
+    th {
+      background: #007bff;
+      color: white;
+    }
+    tr:hover {
+      background: #f5f5f5;
+      cursor: pointer;
+    }
+    #entryModal, #recordsModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      width: 90%;
+      max-width: 380px;
+      box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+      position: relative;
+    }
+    .modal-content h3 {
+      margin-top: 0;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+    .close-btn {
+      position: absolute;
+      right: 14px;
+      top: 12px;
+      font-size: 20px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: #888;
+    }
+    .close-btn:hover {
+      color: #444;
+    }
+    select, input[type=text], input[type=number] {
+      margin-top: 6px;
+    }
+    #recordsTable th, #recordsTable td {
+      font-size: 14px;
+      padding: 6px;
+    }
+  </style>
+</head>
+<body>
 
-Login
+<div id="loginArea">
+  <h1>Login - Game da Família</h1>
+  <label for="username">Usuário</label>
+  <input type="text" id="username" autocomplete="username" />
+  <label for="password">Senha</label>
+  <input type="password" id="password" autocomplete="current-password" />
+  <button id="loginBtn">Entrar</button>
+</div>
 
-Entrar 
+<div id="mainArea" style="display:none;">
+  <h1>Bem-vindo, <span id="loggedUserName"></span>!</h1>
+  <div>
+    <strong>Meta atual:</strong>
+    <div class="progress-bar" title="Progresso da meta">
+      <div id="progressFill" class="progress-fill">0%</div>
+    </div>
+  </div>
 
-Desafio da Família
+  <button id="btnNewPoint" style="margin-bottom:10px;">Novo ponto</button>
+  <button id="btnViewRanking" style="margin-bottom:10px;">Ver tabela de pontuação</button>
+  <button id="btnLogout" style="background:#dc3545;">Sair</button>
 
-Ver Tabela Atual Novo Ponto 
+  <div id="rankingArea" style="display:none; margin-top:20px;">
+    <h2>Ranking da Família</h2>
+    <table id="rankingTable">
+      <thead>
+        <tr><th>Jogador</th><th>Pontos</th><th>Progresso</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
 
-Novo Ponto
+<!-- Modal Novo Ponto -->
+<div id="entryModal">
+  <div class="modal-content">
+    <button class="close-btn" title="Fechar">&times;</button>
+    <h3>Adicionar/Subtrair ponto</h3>
+    <label for="targetPlayer">Para quem:</label>
+    <select id="targetPlayer"></select>
+    <label for="pointValue">Valor do ponto (positivo ou negativo):</label>
+    <input type="number" id="pointValue" min="-100" max="100" value="1" />
+    <label for="pointReason">Motivo:</label>
+    <input type="text" id="pointReason" placeholder="Descreva o motivo" />
+    <button id="submitPointBtn" style="margin-top: 15px;">Confirmar</button>
+  </div>
+</div>
 
-Confirmar Cancelar 
+<!-- Modal Registro Detalhado -->
+<div id="recordsModal">
+  <div class="modal-content" style="max-width: 480px;">
+    <button class="close-btn" title="Fechar">&times;</button>
+    <h3>Registros de pontos</h3>
+    <table id="recordsTable">
+      <thead>
+        <tr>
+          <th>Data/Hora</th><th>Valor</th><th>Motivo</th><th>Adicionado por</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
 
-const users = { "Alan": "200786", "Dani": "170482", "Vini": "280612" }; const goals = { "Alan": 300, "Dani": 300, "Vini": 300, "Alani": 250 }; let currentUser = null; let points = JSON.parse(localStorage.getItem("points") || "[]"); function login() { const user = document.getElementById("username").value; const pass = document.getElementById("password").value; if (users[user] === pass) { currentUser = user; document.getElementById("loginBox").classList.add("hidden"); document.getElementById("main").classList.remove("hidden"); document.getElementById("welcome").innerHTML = `<h3>Olá, ${user}!</h3>`; renderProgress(user, "myProgress"); } else { alert("Credenciais inválidas."); } } function save() { localStorage.setItem("points", JSON.stringify(points)); } function getTotal(user) { return points.filter(p => p.to === user).reduce((sum, p) => sum + p.value, 0); } function renderProgress(user, containerId) { const total = getTotal(user); const goal = goals[user]; const percent = Math.min(100, (total / goal) * 100); document.getElementById(containerId).innerHTML = ` <p><b>${user}</b>: ${total}/${goal} pontos</p> <div class="progress-bar"> <div class="progress-fill" style="width:${percent}%">${Math.round(percent)}%</div> </div>`; } function showAllProgress() { const div = document.getElementById("allProgress"); div.classList.toggle("hidden"); div.innerHTML = "<h3>Tabela Atual</h3>"; Object.keys(goals).forEach(user => { const el = document.createElement("div"); el.className = "user-button"; el.innerHTML = `${user}: ${getTotal(user)}/${goals[user]} pontos`; el.onclick = () => showUserRecords(user); div.appendChild(el); }); } function showUserRecords(user) { const div = document.getElementById("userRecords"); div.classList.remove("hidden"); div.innerHTML = `<h3>Registros de ${user}</h3>`; points.filter(p => p.to === user).forEach(p => { const r = document.createElement("div"); r.className = `record ${p.value > 0 ? 'positive' : 'negative'}`; r.textContent = `${p.date} - ${p.value} pontos por ${p.by} | Motivo: ${p.reason}`; div.appendChild(r); }); } function openNewPointModal() { document.getElementById("newPointModal").classList.remove("hidden"); const sel = document.getElementById("targetUser"); sel.innerHTML = ""; Object.keys(goals).forEach(u => { const opt = document.createElement("option"); opt.value = u; opt.textContent = u; sel.appendChild(opt); }); } function closeNewPointModal() { document.getElementById("newPointModal").classList.add("hidden"); document.getElementById("pointValue").value = ""; document.getElementById("pointReason").value = ""; } function addPoint() { const to = document.getElementById("targetUser").value; const value = parseInt(document.getElementById("pointValue").value); const reason = document.getElementById("pointReason").value.trim(); if (!value || !reason) return alert("Preencha todos os campos."); points.push({ to, value, reason, by: currentUser, date: new Date().toLocaleString() }); save(); renderProgress(currentUser, "myProgress"); closeNewPointModal(); }
+<script>
+  // Usuários e senhas
+  const users = {
+    "Alan": "200786",
+    "Dani": "170482",
+    "Vini": "280612"
+  };
+
+  // Metas
+  const metas = {
+    "Alan": 300,
+    "Dani": 300,
+    "Vini": 300,
+    "Alani": 250
+  };
+
+  // Jogadores possíveis (inclui Alani, que não faz login)
+  const players = ["Alan", "Dani", "Vini", "Alani"];
+
+  // Entradas de pontos
+  let entries = JSON.parse(localStorage.getItem("entries") || "[]");
+  let loggedUser = null;
+
+  // Elementos DOM
+  const loginArea = document.getElementById("loginArea");
+  const mainArea = document.getElementById("mainArea");
+  const usernameInput = document.getElementById("username");
+  const passwordInput = document.getElementById("password");
+  const loginBtn = document.getElementById("loginBtn");
+  const loggedUserNameSpan = document.getElementById("loggedUserName");
+  const progressFill = document.getElementById("progressFill");
+  const btnNewPoint = document.getElementById("btnNewPoint");
+  const btnViewRanking = document.getElementById("btnViewRanking");
+  const btnLogout = document.getElementById("btnLogout");
+  const rankingArea = document.getElementById("rankingArea");
+  const rankingTableBody = document.querySelector("#rankingTable tbody");
+  const entryModal = document.getElementById("entryModal");
+  const recordsModal = document.getElementById("recordsModal");
+  const targetPlayerSelect = document.getElementById("targetPlayer");
+  const pointValueInput = document.getElementById("pointValue");
+  const pointReasonInput = document.getElementById("pointReason");
+  const submitPointBtn = document.getElementById("submitPointBtn");
+  const recordsTableBody = document.querySelector("#recordsTable tbody");
+  const closeBtns = document.querySelectorAll(".close-btn");
+
+  // Função para salvar no localStorage
+  function saveEntries() {
+    localStorage.setItem("entries", JSON.stringify(entries));
+  }
+
+  // Função para calcular pontos atuais de cada jogador
+  function calcularPontos() {
+    const pontos = {};
+    players.forEach(p => pontos[p] = 0);
+    entries.forEach(e => {
+      if(pontos[e.player] !== undefined) pontos[e.player] += e.points;
+    });
+    return pontos;
+  }
+
+  // Atualiza barra de progresso do usuário logado
+  function atualizarProgresso() {
+    if (!loggedUser) return;
+    const pontos = calcularPontos();
+    const atual = pontos[loggedUser] || 0;
+    const meta = metas[loggedUser];
+    const perc = Math.min(Math.round((atual / meta) * 100), 100);
+    progressFill.style.width = perc + "%";
+    progressFill.textContent = perc + "%";
+    progressFill.style.backgroundColor = perc >= 100 ? "#28a745" : "#007bff";
+  }
+
+  // Atualiza tabela ranking
+  function atualizarRanking() {
+    rankingTableBody.innerHTML = "";
+    const pontos = calcularPontos();
+    // Ordenar por pontos decrescente
+    const ranking = players
+      .map(p => ({ player: p, pontos: pontos[p] || 0,
