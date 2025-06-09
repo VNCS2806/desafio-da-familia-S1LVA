@@ -148,6 +148,7 @@
   <label for="password">Senha</label>
   <input type="password" id="password" autocomplete="current-password" />
   <button id="loginBtn">Entrar</button>
+  <p id="loginError" style="color: red; text-align: center; display:none; margin-top: 12px;">Usuário ou senha incorretos.</p>
 </div>
 
 <div id="mainArea" style="display:none;">
@@ -221,10 +222,10 @@
     "Alani": 250
   };
 
-  // Jogadores possíveis (inclui Alani, que não faz login)
+  // Jogadores possíveis
   const players = ["Alan", "Dani", "Vini", "Alani"];
 
-  // Entradas de pontos
+  // Entradas de pontos no localStorage
   let entries = JSON.parse(localStorage.getItem("entries") || "[]");
   let loggedUser = null;
 
@@ -234,6 +235,7 @@
   const usernameInput = document.getElementById("username");
   const passwordInput = document.getElementById("password");
   const loginBtn = document.getElementById("loginBtn");
+  const loginError = document.getElementById("loginError");
   const loggedUserNameSpan = document.getElementById("loggedUserName");
   const progressFill = document.getElementById("progressFill");
   const btnNewPoint = document.getElementById("btnNewPoint");
@@ -250,12 +252,12 @@
   const recordsTableBody = document.querySelector("#recordsTable tbody");
   const closeBtns = document.querySelectorAll(".close-btn");
 
-  // Função para salvar no localStorage
+  // Função salvar localStorage
   function saveEntries() {
     localStorage.setItem("entries", JSON.stringify(entries));
   }
 
-  // Função para calcular pontos atuais de cada jogador
+  // Calcular pontos por jogador
   function calcularPontos() {
     const pontos = {};
     players.forEach(p => pontos[p] = 0);
@@ -277,10 +279,145 @@
     progressFill.style.backgroundColor = perc >= 100 ? "#28a745" : "#007bff";
   }
 
-  // Atualiza tabela ranking
+  // Atualiza ranking
   function atualizarRanking() {
     rankingTableBody.innerHTML = "";
     const pontos = calcularPontos();
-    // Ordenar por pontos decrescente
     const ranking = players
-      .map(p => ({ player: p, pontos: pontos[p] || 0,
+      .map(p => ({ player: p, pontos: pontos[p] || 0, meta: metas[p] || 100 }))
+      .sort((a,b) => b.pontos - a.pontos);
+    ranking.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.player}</td>
+        <td>${r.pontos}</td>
+        <td>
+          <div class="progress-bar" style="height:14px;">
+            <div class="progress-fill" style="width:${Math.min((r.pontos / r.meta)*100,100)}%; font-size:11px;">
+              ${Math.min(Math.round((r.pontos / r.meta)*100),100)}%
+            </div>
+          </div>
+        </td>`;
+      tr.onclick = () => abrirRegistros(r.player);
+      rankingTableBody.appendChild(tr);
+    });
+  }
+
+  // Abrir modal registros
+  function abrirRegistros(player) {
+    recordsTableBody.innerHTML = "";
+    const regs = entries.filter(e => e.player === player);
+    regs.forEach(e => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${new Date(e.timestamp).toLocaleString()}</td>
+        <td>${e.points > 0 ? "+" : ""}${e.points}</td>
+        <td>${e.reason}</td>
+        <td>${e.addedBy}</td>
+      `;
+      recordsTableBody.appendChild(tr);
+    });
+    recordsModal.style.display = "flex";
+  }
+
+  // Login
+  loginBtn.onclick = () => {
+    const user = usernameInput.value.trim();
+    const pass = passwordInput.value;
+    if(users[user] && users[user] === pass){
+      loggedUser = user;
+      loginArea.style.display = "none";
+      mainArea.style.display = "block";
+      loginError.style.display = "none";
+      usernameInput.value = "";
+      passwordInput.value = "";
+      loggedUserNameSpan.textContent = loggedUser;
+      atualizarProgresso();
+      atualizarRanking();
+      rankingArea.style.display = "none";
+      carregarSelectJogadores();
+    } else {
+      loginError.style.display = "block";
+    }
+  };
+
+  // Logout
+  btnLogout.onclick = () => {
+    loggedUser = null;
+    loginArea.style.display = "block";
+    mainArea.style.display = "none";
+    rankingArea.style.display = "none";
+  };
+
+  // Carregar select de jogadores no modal novo ponto
+  function carregarSelectJogadores() {
+    targetPlayerSelect.innerHTML = "";
+    players.forEach(p => {
+      const option = document.createElement("option");
+      option.value = p;
+      option.textContent = p;
+      targetPlayerSelect.appendChild(option);
+    });
+  }
+
+  // Abrir modal novo ponto
+  btnNewPoint.onclick = () => {
+    pointValueInput.value = "1";
+    pointReasonInput.value = "";
+    targetPlayerSelect.value = loggedUser;
+    entryModal.style.display = "flex";
+  };
+
+  // Enviar novo ponto
+  submitPointBtn.onclick = () => {
+    const alvo = targetPlayerSelect.value;
+    const valor = Number(pointValueInput.value);
+    const motivo = pointReasonInput.value.trim();
+    if(!motivo){
+      alert("Informe o motivo do ponto.");
+      return;
+    }
+    if(isNaN(valor) || valor === 0){
+      alert("Informe um valor válido diferente de zero.");
+      return;
+    }
+    entries.push({
+      player: alvo,
+      points: valor,
+      reason: motivo,
+      addedBy: loggedUser,
+      timestamp: Date.now()
+    });
+    saveEntries();
+    entryModal.style.display = "none";
+    atualizarProgresso();
+    atualizarRanking();
+  };
+
+  // Abrir ranking
+  btnViewRanking.onclick = () => {
+    rankingArea.style.display = rankingArea.style.display === "none" ? "block" : "none";
+  };
+
+  // Fechar modais
+  closeBtns.forEach(btn => {
+    btn.onclick = () => {
+      entryModal.style.display = "none";
+      recordsModal.style.display = "none";
+    };
+  });
+
+  // Fechar modais clicando fora
+  window.onclick = (event) => {
+    if(event.target === entryModal) entryModal.style.display = "none";
+    if(event.target === recordsModal) recordsModal.style.display = "none";
+  };
+
+  // Enter para login
+  passwordInput.addEventListener("keydown", e => {
+    if(e.key === "Enter") loginBtn.click();
+  });
+</script>
+
+</body>
+</html>
