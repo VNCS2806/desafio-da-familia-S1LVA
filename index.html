@@ -1,213 +1,319 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Desafio da Família</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h1, h2 { text-align: center; }
-    #loginArea, #mainContent, #rankingSection, #formModal { display: none; }
-    .progress-bar { background: #ccc; border-radius: 10px; overflow: hidden; height: 20px; margin: 5px 0; }
-    .progress-fill { background: #4caf50; height: 100%; color: #fff; text-align: center; line-height: 20px; }
-    .btn { padding: 6px 12px; margin: 5px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    .modal {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
-    }
-    .modal-content {
-      background: white; padding: 20px; border-radius: 10px; width: 300px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Controle de Pontos Família</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #eef2f7;
+    margin: 0;
+    padding: 0;
+  }
+  .container {
+    max-width: 600px;
+    margin: 40px auto;
+    background: white;
+    padding: 20px 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px #ccc;
+  }
+  h2 {
+    text-align: center;
+  }
+  input, select, button {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+  button {
+    background: #0077cc;
+    border: none;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  button:hover {
+    background: #005fa3;
+  }
+  .progress-bar {
+    background: #ddd;
+    border-radius: 15px;
+    overflow: hidden;
+    height: 25px;
+    margin: 8px 0 15px 0;
+  }
+  .progress {
+    height: 100%;
+    background: #4caf50;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    line-height: 25px;
+  }
+  .user-card {
+    border: 1px solid #ddd;
+    background: #fafafa;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  .user-card:hover {
+    background: #e8f0fe;
+  }
+  .registro-card {
+    border: 1px solid #bbb;
+    background: #fefefe;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
+  }
+  .btn-delete {
+    background: #e74c3c;
+    margin-top: 8px;
+  }
+  .modal-backdrop {
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-content {
+    background: white;
+    padding: 25px 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-sizing: border-box;
+  }
+  .modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .modal-content input, .modal-content select {
+    margin: 10px 0;
+  }
+  .flex-row {
+    display: flex;
+    justify-content: space-between;
+  }
+  .flex-row button {
+    width: 48%;
+  }
+</style>
 </head>
 <body>
 
-<div id="loginArea">
-  <h2>Login</h2>
-  <input id="loginUser" placeholder="Usuário" /><br>
-  <input id="loginPass" type="password" placeholder="Senha" /><br>
-  <button onclick="login()" class="btn">Entrar</button>
-</div>
-
-<div id="mainContent">
-  <h1>Desafio da Família</h1>
-  <p id="welcome"></p>
-  <div class="progress-bar"><div id="myProgress" class="progress-fill">0%</div></div>
-  <button onclick="toggleRanking()" class="btn">Ver Ranking</button>
-  <button onclick="openForm()" class="btn">Novo ponto</button>
-  <button onclick="logout()" class="btn">Sair</button>
-
-  <div id="rankingSection">
-    <h2>Ranking</h2>
-    <div id="rankingList"></div>
-  </div>
-
-  <h2>Seus Registros</h2>
-  <table>
-    <thead><tr><th>Para</th><th>Pontos</th><th>Motivo</th><th>Data</th><th>Ação</th></tr></thead>
-    <tbody id="userEntries"></tbody>
-  </table>
-</div>
-
-<!-- Modal -->
-<div id="formModal" class="modal">
-  <div class="modal-content">
-    <h3>Novo ponto</h3>
-    <label>Para:
-      <select id="targetUser"></select>
-    </label><br>
-    <label>Pontos:
-      <input type="number" id="pointValue" value="10">
-    </label><br>
-    <label>Motivo:
-      <input type="text" id="pointReason">
-    </label><br>
-    <button onclick="submitPoint()" class="btn">Enviar</button>
-    <button onclick="closeForm()" class="btn">Cancelar</button>
-  </div>
-</div>
+<div id="app"></div>
 
 <script>
-  const users = {
-    Alan: "1234",
-    Daniela: "5678",
-    Alani: "1111",
-    Vinicius: "2222"
-  };
-  const goals = {
-    Alan: 300,
-    Daniela: 300,
-    Alani: 200,
-    Vinicius: 300
-  };
-  let entries = JSON.parse(localStorage.getItem("entries") || "[]");
-  let loggedUser = localStorage.getItem("loggedUser") || null;
+  // Usuários cadastrados - login com senha
+  const users = [
+    { username: "joao", password: "123", meta: 100 },
+    { username: "maria", password: "456", meta: 150 },
+    { username: "ana", password: "789", meta: 200 }
+  ];
 
-  function saveEntries() {
-    localStorage.setItem("entries", JSON.stringify(entries));
+  // Carregar registros do localStorage
+  let registros = JSON.parse(localStorage.getItem("registros")) || [];
+  let currentUser = null;
+
+  // Salva registros no localStorage
+  function saveRegistros() {
+    localStorage.setItem("registros", JSON.stringify(registros));
   }
 
-  function login() {
-    const user = document.getElementById("loginUser").value.trim();
-    const pass = document.getElementById("loginPass").value.trim();
-    if (users[user] && users[user] === pass) {
-      loggedUser = user;
-      localStorage.setItem("loggedUser", user);
-      document.getElementById("loginArea").style.display = "none";
-      document.getElementById("mainContent").style.display = "block";
-      document.getElementById("welcome").textContent = `Olá, ${loggedUser}`;
-      updateProgress();
-      updateRanking();
-      renderUserEntries();
-      fillSelect();
-    } else {
+  // Renderiza a página de login
+  function renderLogin() {
+    document.getElementById("app").innerHTML = `
+      <div class="container">
+        <h2>Login</h2>
+        <input type="text" id="input-username" placeholder="Usuário" />
+        <input type="password" id="input-password" placeholder="Senha" />
+        <button onclick="handleLogin()">Entrar</button>
+      </div>
+    `;
+  }
+
+  // Tratamento do login
+  function handleLogin() {
+    const username = document.getElementById("input-username").value.trim();
+    const password = document.getElementById("input-password").value.trim();
+
+    const user = users.find(u => u.username === username && u.password === password);
+    if (!user) {
       alert("Usuário ou senha inválidos.");
+      return;
     }
+    currentUser = user;
+    renderHome();
   }
 
+  // Calcula pontos totais recebidos por um usuário
+  function calcularPontos(usuario) {
+    return registros
+      .filter(r => r.destino === usuario)
+      .reduce((acc, cur) => acc + cur.valor, 0);
+  }
+
+  // Renderiza a tela principal após login
+  function renderHome() {
+    const pontos = calcularPontos(currentUser.username);
+    const porcentagem = Math.min(100, Math.round((pontos / currentUser.meta) * 100));
+
+    document.getElementById("app").innerHTML = `
+      <div class="container">
+        <h2>Bem-vindo, ${currentUser.username}</h2>
+        <p>Meta: ${currentUser.meta} pontos</p>
+        <p>Você tem: ${pontos} pontos (${porcentagem}%)</p>
+        <div class="progress-bar">
+          <div class="progress" style="width:${porcentagem}%">${porcentagem}%</div>
+        </div>
+        <button onclick="renderRanking()">Ver ranking da família</button>
+        <button onclick="abrirModalNovoRegistro()">Adicionar novo ponto</button>
+        <button onclick="logout()">Sair</button>
+      </div>
+    `;
+  }
+
+  // Logout e volta para login
   function logout() {
-    localStorage.removeItem("loggedUser");
-    location.reload();
+    currentUser = null;
+    renderLogin();
   }
 
-  function updateProgress() {
-    const total = goals[loggedUser];
-    const earned = entries.filter(e => e.to === loggedUser).reduce((sum, e) => sum + e.points, 0);
-    const pct = Math.min(100, Math.round((earned / total) * 100));
-    document.getElementById("myProgress").style.width = pct + "%";
-    document.getElementById("myProgress").textContent = pct + "%";
+  // Renderiza ranking completo
+  function renderRanking() {
+    // Mapeia os usuários com seus pontos e porcentagem
+    const ranking = users.map(u => {
+      const pts = calcularPontos(u.username);
+      const pct = Math.min(100, Math.round((pts / u.meta) * 100));
+      return {...u, pontos: pts, porcentagem: pct};
+    }).sort((a,b) => b.porcentagem - a.porcentagem);
+
+    document.getElementById("app").innerHTML = `
+      <div class="container">
+        <h2>Ranking da Família</h2>
+        ${ranking.map(u => `
+          <div class="user-card" onclick="verRegistros('${u.username}')">
+            <b>${u.username}</b> — ${u.pontos} pontos (${u.porcentagem}% da meta)
+            <div class="progress-bar">
+              <div class="progress" style="width:${u.porcentagem}%; background:#6a1b9a">${u.porcentagem}%</div>
+            </div>
+          </div>
+        `).join("")}
+        <button onclick="renderHome()">Voltar</button>
+      </div>
+    `;
   }
 
-  function toggleRanking() {
-    const sec = document.getElementById("rankingSection");
-    sec.style.display = sec.style.display === "none" ? "block" : "none";
+  // Ver registros de um usuário específico
+  function verRegistros(username) {
+    const userRegistros = registros.filter(r => r.destino === username);
+
+    document.getElementById("app").innerHTML = `
+      <div class="container">
+        <h2>Registros de ${username}</h2>
+        ${userRegistros.length === 0 ? '<p>Nenhum registro encontrado.</p>' : userRegistros.map((r,i) => `
+          <div class="registro-card">
+            <p><b>De:</b> ${r.origem}</p>
+            <p><b>Valor:</b> ${r.valor}</p>
+            <p><b>Motivo:</b> ${r.motivo}</p>
+            ${r.origem === currentUser.username ? `<button class="btn-delete" onclick="excluirRegistro(${i}, '${username}')">Excluir</button>` : ''}
+          </div>
+        `).join("")}
+        <button onclick="renderRanking()">Voltar</button>
+      </div>
+    `;
   }
 
-  function updateRanking() {
-    const div = document.getElementById("rankingList");
-    div.innerHTML = "";
-    Object.keys(goals).forEach(user => {
-      const total = goals[user];
-      const earned = entries.filter(e => e.to === user).reduce((sum, e) => sum + e.points, 0);
-      const pct = Math.min(100, Math.round((earned / total) * 100));
-      div.innerHTML += `<p><b>${user}:</b> ${earned}/${total}
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%">${pct}%</div></div></p>`;
-    });
-  }
+  // Excluir um registro (só quem criou pode excluir)
+  function excluirRegistro(indice, username) {
+    // Filtra só os registros do usuário para achar índice correto
+    const userRegistros = registros.filter(r => r.destino === username);
+    const registroParaExcluir = userRegistros[indice];
 
-  function openForm() {
-    document.getElementById("formModal").style.display = "flex";
-  }
-
-  function closeForm() {
-    document.getElementById("formModal").style.display = "none";
-    document.getElementById("pointReason").value = "";
-    document.getElementById("pointValue").value = 10;
-  }
-
-  function fillSelect() {
-    const sel = document.getElementById("targetUser");
-    sel.innerHTML = "";
-    Object.keys(users).forEach(user => {
-      if (user !== loggedUser) {
-        const opt = document.createElement("option");
-        opt.value = user;
-        opt.textContent = user;
-        sel.appendChild(opt);
-      }
-    });
-  }
-
-  function submitPoint() {
-    const to = document.getElementById("targetUser").value;
-    const points = parseInt(document.getElementById("pointValue").value);
-    const reason = document.getElementById("pointReason").value.trim();
-    if (!reason) return alert("Escreva o motivo.");
-    entries.push({
-      from: loggedUser,
-      to,
-      points,
-      reason,
-      date: new Date().toLocaleString()
-    });
-    saveEntries();
-    updateProgress();
-    updateRanking();
-    renderUserEntries();
-    closeForm();
-  }
-
-  function renderUserEntries() {
-    const tb = document.getElementById("userEntries");
-    tb.innerHTML = "";
-    entries
-      .filter(e => e.from === loggedUser)
-      .forEach((e, i) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${e.to}</td><td>${e.points}</td><td>${e.reason}</td><td>${e.date}</td>
-          <td><button onclick="deleteEntry(${i})">Excluir</button></td>`;
-        tb.appendChild(tr);
-      });
-  }
-
-  function deleteEntry(index) {
-    if (confirm("Deseja excluir esse registro?")) {
-      const mine = entries.filter(e => e.from === loggedUser);
-      const entryToDelete = mine[index];
-      entries = entries.filter(e => e !== entryToDelete);
-      saveEntries();
-      renderUserEntries();
-      updateRanking();
-      updateProgress();
+    // Acha índice no array geral registros
+    const idxGeral = registros.indexOf(registroParaExcluir);
+    if (idxGeral !== -1) {
+      registros.splice(idxGeral, 1);
+      saveRegistros();
+      verRegistros(username);
     }
   }
 
-  window.onload = () => {
-    if (loggedUser) login();
-    else document.getElementById("loginArea").style.display = "block";
-  };
+  // Abre modal para novo registro
+  function abrirModalNovoRegistro() {
+    const outrosUsuarios = users.filter(u => u.username !== currentUser.username);
+    const opcoes = outrosUsuarios.map(u => `<option value="${u.username}">${u.username}</option>`).join("");
+
+    // Cria modal na página
+    const modal = document.createElement("div");
+    modal.className = "modal-backdrop";
+    modal.id = "modal-novo-registro";
+    modal.innerHTML = `
+      <div class="modal-content">
+        <h3>Novo ponto</h3>
+        <select id="destino">${opcoes}</select>
+        <input id="valor" type="number" placeholder="Valor dos pontos" min="1" />
+        <input id="motivo" type="text" placeholder="Motivo" />
+        <div class="flex-row">
+          <button onclick="salvarRegistro()">Salvar</button>
+          <button onclick="fecharModal()">Cancelar</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+
+  // Fecha modal
+  function fecharModal() {
+    const modal = document.getElementById("modal-novo-registro");
+    if (modal) modal.remove();
+  }
+
+  // Salva novo registro após validações
+  function salvarRegistro() {
+    const destino = document.getElementById("destino").value;
+    const valor = parseInt(document.getElementById("valor").value);
+    const motivo = document.getElementById("motivo").value.trim();
+
+    if (!destino || isNaN(valor) || valor <= 0 || motivo.length === 0) {
+      alert("Preencha todos os campos corretamente.");
+      return;
+    }
+
+    // Não pode dar ponto para si mesmo (não vai estar na lista, mas só para garantir)
+    if (destino === currentUser.username) {
+      alert("Você não pode atribuir pontos para si mesmo.");
+      return;
+    }
+
+    registros.push({
+      origem: currentUser.username,
+      destino,
+      valor,
+      motivo
+    });
+    saveRegistros();
+    fecharModal();
+    renderHome();
+  }
+
+  // Inicializa o app
+  renderLogin();
+
 </script>
 
 </body>
