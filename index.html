@@ -118,11 +118,12 @@
 <div id="app"></div>
 
 <script>
-  // Usuários cadastrados com senha e meta
+  // Usuários cadastrados com senha e meta. Alani não tem login.
   const users = [
-    { username: "Vini", password: "280612", meta: 300 },
-    { username: "Dani", password: "170482", meta: 250 },
-    { username: "Alan", password: "200786", meta: 200 }
+    { username: "Vini", password: "280612", meta: 250, login: true },
+    { username: "Dani", password: "170482", meta: 250, login: true },
+    { username: "Alan", password: "200786", meta: 250, login: true },
+    { username: "Alani", password: "", meta: 200, login: false }
   ];
 
   // Carregar registros do localStorage
@@ -151,7 +152,8 @@
     const username = document.getElementById("input-username").value.trim();
     const password = document.getElementById("input-password").value.trim();
 
-    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+    // Só pode logar quem tem login: true
+    const user = users.find(u => u.login && u.username.toLowerCase() === username.toLowerCase() && u.password === password);
     if (!user) {
       alert("Usuário ou senha inválidos.");
       return;
@@ -193,7 +195,7 @@
     renderLogin();
   }
 
-  // Renderiza ranking completo
+  // Renderiza ranking completo (com todos, inclusive Alani)
   function renderRanking() {
     // Mapeia os usuários com seus pontos e porcentagem
     const ranking = users.map(u => {
@@ -240,11 +242,9 @@
 
   // Excluir um registro (só quem criou pode excluir)
   function excluirRegistro(indice, username) {
-    // Filtra só os registros do usuário para achar índice correto
     const userRegistros = registros.filter(r => r.destino.toLowerCase() === username.toLowerCase());
     const registroParaExcluir = userRegistros[indice];
 
-    // Acha índice no array geral registros
     const idxGeral = registros.indexOf(registroParaExcluir);
     if (idxGeral !== -1) {
       registros.splice(idxGeral, 1);
@@ -255,10 +255,10 @@
 
   // Abre modal para novo registro
   function abrirModalNovoRegistro() {
+    // Todos exceto quem está logado podem ser destino (inclui Alani)
     const outrosUsuarios = users.filter(u => u.username.toLowerCase() !== currentUser.username.toLowerCase());
     const opcoes = outrosUsuarios.map(u => `<option value="${u.username}">${u.username}</option>`).join("");
 
-    // Cria modal na página
     const modal = document.createElement("div");
     modal.className = "modal-backdrop";
     modal.id = "modal-novo-registro";
@@ -297,8 +297,8 @@
       alert("Você não pode atribuir pontos para você mesmo.");
       return;
     }
-    if (!valor || valor <= 0) {
-      alert("Informe um valor válido para os pontos.");
+    if (!valor || valor === 0) {
+      alert("Informe um valor válido diferente de zero.");
       return;
     }
     if (!motivo) {
