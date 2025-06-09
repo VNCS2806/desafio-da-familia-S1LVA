@@ -1,422 +1,213 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Game da Família - Pontuação</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Desafio da Família</title>
   <style>
-    body {
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: #f0f4f8;
-      margin: 0;
-      padding: 20px;
-      color: #333;
-    }
-    #loginArea, #mainArea {
-      max-width: 500px;
-      margin: auto;
-      background: white;
-      padding: 25px 30px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
-    }
-    h1, h2 {
-      text-align: center;
-      margin-bottom: 15px;
-    }
-    label {
-      display: block;
-      margin: 12px 0 6px;
-      font-weight: 600;
-    }
-    input[type=text], input[type=password], select {
-      width: 100%;
-      padding: 8px;
-      font-size: 16px;
-      border: 1.5px solid #bbb;
-      border-radius: 6px;
-      box-sizing: border-box;
-      transition: border-color 0.3s;
-    }
-    input[type=text]:focus, input[type=password]:focus, select:focus {
-      border-color: #007bff;
-      outline: none;
-    }
-    button {
-      margin-top: 18px;
-      width: 100%;
-      background: #007bff;
-      color: white;
-      border: none;
-      padding: 10px;
-      font-size: 17px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    .progress-bar {
-      background: #ddd;
-      border-radius: 12px;
-      overflow: hidden;
-      height: 22px;
-      margin: 6px 0 14px;
-    }
-    .progress-fill {
-      height: 100%;
-      text-align: center;
-      color: white;
-      font-weight: 700;
-      line-height: 22px;
-      border-radius: 12px;
-      background: #28a745;
-      width: 0%;
-      transition: width 0.5s ease-in-out;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    th, td {
-      border: 1px solid #bbb;
-      padding: 8px;
-      text-align: center;
-      font-size: 15px;
-    }
-    th {
-      background: #007bff;
-      color: white;
-    }
-    tr:hover {
-      background: #f5f5f5;
-      cursor: pointer;
-    }
-    #entryModal, #recordsModal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1, h2 { text-align: center; }
+    #loginArea, #mainContent, #rankingSection, #formModal { display: none; }
+    .progress-bar { background: #ccc; border-radius: 10px; overflow: hidden; height: 20px; margin: 5px 0; }
+    .progress-fill { background: #4caf50; height: 100%; color: #fff; text-align: center; line-height: 20px; }
+    .btn { padding: 6px 12px; margin: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    .modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
     }
     .modal-content {
-      background: white;
-      border-radius: 8px;
-      padding: 20px;
-      width: 90%;
-      max-width: 380px;
-      box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
-      position: relative;
-    }
-    .modal-content h3 {
-      margin-top: 0;
-      margin-bottom: 18px;
-      text-align: center;
-    }
-    .close-btn {
-      position: absolute;
-      right: 14px;
-      top: 12px;
-      font-size: 20px;
-      border: none;
-      background: none;
-      cursor: pointer;
-      color: #888;
-    }
-    .close-btn:hover {
-      color: #444;
-    }
-    select, input[type=text], input[type=number] {
-      margin-top: 6px;
-    }
-    #recordsTable th, #recordsTable td {
-      font-size: 14px;
-      padding: 6px;
+      background: white; padding: 20px; border-radius: 10px; width: 300px;
     }
   </style>
 </head>
 <body>
 
 <div id="loginArea">
-  <h1>Login - Game da Família</h1>
-  <label for="username">Usuário</label>
-  <input type="text" id="username" autocomplete="username" />
-  <label for="password">Senha</label>
-  <input type="password" id="password" autocomplete="current-password" />
-  <button id="loginBtn">Entrar</button>
-  <p id="loginError" style="color: red; text-align: center; display:none; margin-top: 12px;">Usuário ou senha incorretos.</p>
+  <h2>Login</h2>
+  <input id="loginUser" placeholder="Usuário" /><br>
+  <input id="loginPass" type="password" placeholder="Senha" /><br>
+  <button onclick="login()" class="btn">Entrar</button>
 </div>
 
-<div id="mainArea" style="display:none;">
-  <h1>Bem-vindo, <span id="loggedUserName"></span>!</h1>
-  <div>
-    <strong>Meta atual:</strong>
-    <div class="progress-bar" title="Progresso da meta">
-      <div id="progressFill" class="progress-fill">0%</div>
-    </div>
+<div id="mainContent">
+  <h1>Desafio da Família</h1>
+  <p id="welcome"></p>
+  <div class="progress-bar"><div id="myProgress" class="progress-fill">0%</div></div>
+  <button onclick="toggleRanking()" class="btn">Ver Ranking</button>
+  <button onclick="openForm()" class="btn">Novo ponto</button>
+  <button onclick="logout()" class="btn">Sair</button>
+
+  <div id="rankingSection">
+    <h2>Ranking</h2>
+    <div id="rankingList"></div>
   </div>
 
-  <button id="btnNewPoint" style="margin-bottom:10px;">Novo ponto</button>
-  <button id="btnViewRanking" style="margin-bottom:10px;">Ver tabela de pontuação</button>
-  <button id="btnLogout" style="background:#dc3545;">Sair</button>
-
-  <div id="rankingArea" style="display:none; margin-top:20px;">
-    <h2>Ranking da Família</h2>
-    <table id="rankingTable">
-      <thead>
-        <tr><th>Jogador</th><th>Pontos</th><th>Progresso</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+  <h2>Seus Registros</h2>
+  <table>
+    <thead><tr><th>Para</th><th>Pontos</th><th>Motivo</th><th>Data</th><th>Ação</th></tr></thead>
+    <tbody id="userEntries"></tbody>
+  </table>
 </div>
 
-<!-- Modal Novo Ponto -->
-<div id="entryModal">
+<!-- Modal -->
+<div id="formModal" class="modal">
   <div class="modal-content">
-    <button class="close-btn" title="Fechar">&times;</button>
-    <h3>Adicionar/Subtrair ponto</h3>
-    <label for="targetPlayer">Para quem:</label>
-    <select id="targetPlayer"></select>
-    <label for="pointValue">Valor do ponto (positivo ou negativo):</label>
-    <input type="number" id="pointValue" min="-100" max="100" value="1" />
-    <label for="pointReason">Motivo:</label>
-    <input type="text" id="pointReason" placeholder="Descreva o motivo" />
-    <button id="submitPointBtn" style="margin-top: 15px;">Confirmar</button>
-  </div>
-</div>
-
-<!-- Modal Registro Detalhado -->
-<div id="recordsModal">
-  <div class="modal-content" style="max-width: 480px;">
-    <button class="close-btn" title="Fechar">&times;</button>
-    <h3>Registros de pontos</h3>
-    <table id="recordsTable">
-      <thead>
-        <tr>
-          <th>Data/Hora</th><th>Valor</th><th>Motivo</th><th>Adicionado por</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <h3>Novo ponto</h3>
+    <label>Para:
+      <select id="targetUser"></select>
+    </label><br>
+    <label>Pontos:
+      <input type="number" id="pointValue" value="10">
+    </label><br>
+    <label>Motivo:
+      <input type="text" id="pointReason">
+    </label><br>
+    <button onclick="submitPoint()" class="btn">Enviar</button>
+    <button onclick="closeForm()" class="btn">Cancelar</button>
   </div>
 </div>
 
 <script>
-  // Usuários e senhas
   const users = {
-    "Alan": "200786",
-    "Dani": "170482",
-    "Vini": "280612"
+    Alan: "1234",
+    Daniela: "5678",
+    Alani: "1111",
+    Vinicius: "2222"
   };
-
-  // Metas
-  const metas = {
-    "Alan": 300,
-    "Dani": 300,
-    "Vini": 300,
-    "Alani": 250
+  const goals = {
+    Alan: 300,
+    Daniela: 300,
+    Alani: 200,
+    Vinicius: 300
   };
-
-  // Jogadores possíveis
-  const players = ["Alan", "Dani", "Vini", "Alani"];
-
-  // Entradas de pontos no localStorage
   let entries = JSON.parse(localStorage.getItem("entries") || "[]");
-  let loggedUser = null;
+  let loggedUser = localStorage.getItem("loggedUser") || null;
 
-  // Elementos DOM
-  const loginArea = document.getElementById("loginArea");
-  const mainArea = document.getElementById("mainArea");
-  const usernameInput = document.getElementById("username");
-  const passwordInput = document.getElementById("password");
-  const loginBtn = document.getElementById("loginBtn");
-  const loginError = document.getElementById("loginError");
-  const loggedUserNameSpan = document.getElementById("loggedUserName");
-  const progressFill = document.getElementById("progressFill");
-  const btnNewPoint = document.getElementById("btnNewPoint");
-  const btnViewRanking = document.getElementById("btnViewRanking");
-  const btnLogout = document.getElementById("btnLogout");
-  const rankingArea = document.getElementById("rankingArea");
-  const rankingTableBody = document.querySelector("#rankingTable tbody");
-  const entryModal = document.getElementById("entryModal");
-  const recordsModal = document.getElementById("recordsModal");
-  const targetPlayerSelect = document.getElementById("targetPlayer");
-  const pointValueInput = document.getElementById("pointValue");
-  const pointReasonInput = document.getElementById("pointReason");
-  const submitPointBtn = document.getElementById("submitPointBtn");
-  const recordsTableBody = document.querySelector("#recordsTable tbody");
-  const closeBtns = document.querySelectorAll(".close-btn");
-
-  // Função salvar localStorage
   function saveEntries() {
     localStorage.setItem("entries", JSON.stringify(entries));
   }
 
-  // Calcular pontos por jogador
-  function calcularPontos() {
-    const pontos = {};
-    players.forEach(p => pontos[p] = 0);
-    entries.forEach(e => {
-      if(pontos[e.player] !== undefined) pontos[e.player] += e.points;
-    });
-    return pontos;
-  }
-
-  // Atualiza barra de progresso do usuário logado
-  function atualizarProgresso() {
-    if (!loggedUser) return;
-    const pontos = calcularPontos();
-    const atual = pontos[loggedUser] || 0;
-    const meta = metas[loggedUser];
-    const perc = Math.min(Math.round((atual / meta) * 100), 100);
-    progressFill.style.width = perc + "%";
-    progressFill.textContent = perc + "%";
-    progressFill.style.backgroundColor = perc >= 100 ? "#28a745" : "#007bff";
-  }
-
-  // Atualiza ranking
-  function atualizarRanking() {
-    rankingTableBody.innerHTML = "";
-    const pontos = calcularPontos();
-    const ranking = players
-      .map(p => ({ player: p, pontos: pontos[p] || 0, meta: metas[p] || 100 }))
-      .sort((a,b) => b.pontos - a.pontos);
-    ranking.forEach(r => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${r.player}</td>
-        <td>${r.pontos}</td>
-        <td>
-          <div class="progress-bar" style="height:14px;">
-            <div class="progress-fill" style="width:${Math.min((r.pontos / r.meta)*100,100)}%; font-size:11px;">
-              ${Math.min(Math.round((r.pontos / r.meta)*100),100)}%
-            </div>
-          </div>
-        </td>`;
-      tr.onclick = () => abrirRegistros(r.player);
-      rankingTableBody.appendChild(tr);
-    });
-  }
-
-  // Abrir modal registros
-  function abrirRegistros(player) {
-    recordsTableBody.innerHTML = "";
-    const regs = entries.filter(e => e.player === player);
-    regs.forEach(e => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${new Date(e.timestamp).toLocaleString()}</td>
-        <td>${e.points > 0 ? "+" : ""}${e.points}</td>
-        <td>${e.reason}</td>
-        <td>${e.addedBy}</td>
-      `;
-      recordsTableBody.appendChild(tr);
-    });
-    recordsModal.style.display = "flex";
-  }
-
-  // Login
-  loginBtn.onclick = () => {
-    const user = usernameInput.value.trim();
-    const pass = passwordInput.value;
-    if(users[user] && users[user] === pass){
+  function login() {
+    const user = document.getElementById("loginUser").value.trim();
+    const pass = document.getElementById("loginPass").value.trim();
+    if (users[user] && users[user] === pass) {
       loggedUser = user;
-      loginArea.style.display = "none";
-      mainArea.style.display = "block";
-      loginError.style.display = "none";
-      usernameInput.value = "";
-      passwordInput.value = "";
-      loggedUserNameSpan.textContent = loggedUser;
-      atualizarProgresso();
-      atualizarRanking();
-      rankingArea.style.display = "none";
-      carregarSelectJogadores();
+      localStorage.setItem("loggedUser", user);
+      document.getElementById("loginArea").style.display = "none";
+      document.getElementById("mainContent").style.display = "block";
+      document.getElementById("welcome").textContent = `Olá, ${loggedUser}`;
+      updateProgress();
+      updateRanking();
+      renderUserEntries();
+      fillSelect();
     } else {
-      loginError.style.display = "block";
+      alert("Usuário ou senha inválidos.");
     }
-  };
+  }
 
-  // Logout
-  btnLogout.onclick = () => {
-    loggedUser = null;
-    loginArea.style.display = "block";
-    mainArea.style.display = "none";
-    rankingArea.style.display = "none";
-  };
+  function logout() {
+    localStorage.removeItem("loggedUser");
+    location.reload();
+  }
 
-  // Carregar select de jogadores no modal novo ponto
-  function carregarSelectJogadores() {
-    targetPlayerSelect.innerHTML = "";
-    players.forEach(p => {
-      const option = document.createElement("option");
-      option.value = p;
-      option.textContent = p;
-      targetPlayerSelect.appendChild(option);
+  function updateProgress() {
+    const total = goals[loggedUser];
+    const earned = entries.filter(e => e.to === loggedUser).reduce((sum, e) => sum + e.points, 0);
+    const pct = Math.min(100, Math.round((earned / total) * 100));
+    document.getElementById("myProgress").style.width = pct + "%";
+    document.getElementById("myProgress").textContent = pct + "%";
+  }
+
+  function toggleRanking() {
+    const sec = document.getElementById("rankingSection");
+    sec.style.display = sec.style.display === "none" ? "block" : "none";
+  }
+
+  function updateRanking() {
+    const div = document.getElementById("rankingList");
+    div.innerHTML = "";
+    Object.keys(goals).forEach(user => {
+      const total = goals[user];
+      const earned = entries.filter(e => e.to === user).reduce((sum, e) => sum + e.points, 0);
+      const pct = Math.min(100, Math.round((earned / total) * 100));
+      div.innerHTML += `<p><b>${user}:</b> ${earned}/${total}
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%">${pct}%</div></div></p>`;
     });
   }
 
-  // Abrir modal novo ponto
-  btnNewPoint.onclick = () => {
-    pointValueInput.value = "1";
-    pointReasonInput.value = "";
-    targetPlayerSelect.value = loggedUser;
-    entryModal.style.display = "flex";
-  };
+  function openForm() {
+    document.getElementById("formModal").style.display = "flex";
+  }
 
-  // Enviar novo ponto
-  submitPointBtn.onclick = () => {
-    const alvo = targetPlayerSelect.value;
-    const valor = Number(pointValueInput.value);
-    const motivo = pointReasonInput.value.trim();
-    if(!motivo){
-      alert("Informe o motivo do ponto.");
-      return;
-    }
-    if(isNaN(valor) || valor === 0){
-      alert("Informe um valor válido diferente de zero.");
-      return;
-    }
+  function closeForm() {
+    document.getElementById("formModal").style.display = "none";
+    document.getElementById("pointReason").value = "";
+    document.getElementById("pointValue").value = 10;
+  }
+
+  function fillSelect() {
+    const sel = document.getElementById("targetUser");
+    sel.innerHTML = "";
+    Object.keys(users).forEach(user => {
+      if (user !== loggedUser) {
+        const opt = document.createElement("option");
+        opt.value = user;
+        opt.textContent = user;
+        sel.appendChild(opt);
+      }
+    });
+  }
+
+  function submitPoint() {
+    const to = document.getElementById("targetUser").value;
+    const points = parseInt(document.getElementById("pointValue").value);
+    const reason = document.getElementById("pointReason").value.trim();
+    if (!reason) return alert("Escreva o motivo.");
     entries.push({
-      player: alvo,
-      points: valor,
-      reason: motivo,
-      addedBy: loggedUser,
-      timestamp: Date.now()
+      from: loggedUser,
+      to,
+      points,
+      reason,
+      date: new Date().toLocaleString()
     });
     saveEntries();
-    entryModal.style.display = "none";
-    atualizarProgresso();
-    atualizarRanking();
+    updateProgress();
+    updateRanking();
+    renderUserEntries();
+    closeForm();
+  }
+
+  function renderUserEntries() {
+    const tb = document.getElementById("userEntries");
+    tb.innerHTML = "";
+    entries
+      .filter(e => e.from === loggedUser)
+      .forEach((e, i) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${e.to}</td><td>${e.points}</td><td>${e.reason}</td><td>${e.date}</td>
+          <td><button onclick="deleteEntry(${i})">Excluir</button></td>`;
+        tb.appendChild(tr);
+      });
+  }
+
+  function deleteEntry(index) {
+    if (confirm("Deseja excluir esse registro?")) {
+      const mine = entries.filter(e => e.from === loggedUser);
+      const entryToDelete = mine[index];
+      entries = entries.filter(e => e !== entryToDelete);
+      saveEntries();
+      renderUserEntries();
+      updateRanking();
+      updateProgress();
+    }
+  }
+
+  window.onload = () => {
+    if (loggedUser) login();
+    else document.getElementById("loginArea").style.display = "block";
   };
-
-  // Abrir ranking
-  btnViewRanking.onclick = () => {
-    rankingArea.style.display = rankingArea.style.display === "none" ? "block" : "none";
-  };
-
-  // Fechar modais
-  closeBtns.forEach(btn => {
-    btn.onclick = () => {
-      entryModal.style.display = "none";
-      recordsModal.style.display = "none";
-    };
-  });
-
-  // Fechar modais clicando fora
-  window.onclick = (event) => {
-    if(event.target === entryModal) entryModal.style.display = "none";
-    if(event.target === recordsModal) recordsModal.style.display = "none";
-  };
-
-  // Enter para login
-  passwordInput.addEventListener("keydown", e => {
-    if(e.key === "Enter") loginBtn.click();
-  });
 </script>
 
 </body>
